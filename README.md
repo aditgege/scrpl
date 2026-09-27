@@ -10,18 +10,26 @@ Editor kolase analog berbasis web (canvas 2D) untuk membuat kolase kertas, foto,
 
 ### Menjalankan
 
-Karena memakai ES modules, **tidak bisa** dibuka langsung lewat `file://`. Butuh static server:
+Karena memakai ES modules, **tidak bisa** dibuka langsung lewat `file://`. Butuh static server.
+
+#### Cara run
 
 ```bash
-# pilih salah satu
 npx serve .
+```
+
+`npx` otomatis mengunduh `serve` kalau belum ada — jadi tidak perlu `npm install` lebih dulu.
+
+Kalau `npx` repot (mis. Node belum terpasang), pakai server bawaan Python atau PHP:
+
+```bash
 python -m http.server 8080
 php -S localhost:8080
 ```
 
-Lalu buka `http://localhost:8080` di browser (Chrome/Edge Desktop = target utama).
+Lalu buka `http://localhost:3000` (port `serve` default) atau `http://localhost:8080` di browser — Chrome/Edge Desktop = target utama.
 
-> Alternatif: `index.single.html` adalah bundel satu-file (JS+CSS inline). File itu bisa langsung dibuka double-click tanpa server — cocok untuk dibagikan/diarsipkan, tapi selalu edit di `index.html` + `js/` + `css/`.
+> **Alternatif tanpa server:** `index.single.html` adalah bundel satu-file (JS + CSS inline). File itu bisa langsung dibuka double-click — cocok untuk dibagikan atau diarsipkan. Tapi selalu edit di `index.html` + `js/` + `css/`, bukan di file bundelnya.
 
 ### Alur kerja singkat
 
