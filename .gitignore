@@ -1,0 +1,14 @@
+# tool state / agent scratch
+.omo/run-continuation/
+.codegraph/
+.scratch/**/*.tmp
+
+# OS
+Thumbs.db
+.DS_Store
+desktop.ini
+
+# editor
+.vscode/
+.idea/
+*.swp

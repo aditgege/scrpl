@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Scrapbook — analog collage editor</title>
+<link rel="icon" href="data:,">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;600;800&family=Archivo+Black&family=Bebas+Neue&family=Caveat:wght@600&family=DM+Serif+Display:ital@0;1&family=IBM+Plex+Mono:wght@400;500;600&family=Instrument+Serif:ital@0;1&family=Inter+Tight:wght@400;500;700;800;900&family=Italiana&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Space+Grotesk:wght@400;500;600;700&family=Special+Elite&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.min.js"></script>
+<link rel="stylesheet" href="./css/styles.css">
+</head>
+<body>
+
+<header id="topbar">
+  <div class="brand"><span class="brand-name">Scrapbook</span><span class="brand-sub">ANALOG STUDIO</span></div>
+  <div class="tb-center"><input id="projName" value="Untitled collage" spellcheck="false"></div>
+  <div class="tb-right">
+    <button class="ibtn" id="btnCut" title="Cut-out tool — lasso & shapes (C)"><i data-lucide="scissors"></i></button>
+    <div class="tb-scrl" id="scrlCtrl" style="display:flex;align-items:center;gap:6px">
+      <span style="font:600 9px var(--mono);letter-spacing:.12em;color:#9a917f;white-space:nowrap">SLIDES</span>
+      <div class="stepper" id="scrlStepper" style="height:34px;min-width:92px;background:#242019;border-color:#3a362e">
+        <button id="scrlMinus" aria-label="Decrease slides" style="color:#c9c1ad"><i data-lucide="minus"></i></button>
+        <input id="scrlNVal" type="text" readonly value="1" aria-label="Number of slides" style="background:transparent;color:var(--cream)">
+        <button id="scrlPlus" aria-label="Increase slides" style="color:#c9c1ad"><i data-lucide="plus"></i></button>
+      </div>
+      <button class="ibtn" id="btnGuides" title="Toggle SCRL guides"><i data-lucide="eye"></i></button>
+    </div>
+    <button class="ibtn" id="btnSnap" title="Snap to guides — off by default, imperfection is the point"><i data-lucide="magnet"></i></button>
+    <div class="impwrap">
+      <button class="ibtn" id="btnImp" title="Make It Imperfect"><i data-lucide="wand-2"></i></button>
+      <div class="imppop" id="impPop">
+        <div class="sec-head" style="margin-top:0;color:#9a917f"><span>Imperfection</span></div>
+        <div class="f"><span>Rotation ± <b id="impRV">4°</b></span><input type="range" id="impR" min="0" max="15" value="4"></div>
+        <div class="f"><span>Position ± <b id="impPV">12px</b></span><input type="range" id="impP" min="0" max="40" value="12"></div>
+        <div class="f"><span>Scale ± <b id="impSV">2%</b></span><input type="range" id="impS" min="0" max="10" value="2"></div>
+        <button class="btn acc block" id="impGo" style="margin-top:4px"><i data-lucide="wand-2"></i>Apply to selection / all</button>
+      </div>
+    </div>
+    <button class="ibtn" id="btnUndo" title="Undo (Ctrl+Z)"><i data-lucide="undo-2"></i></button>
+    <button class="ibtn" id="btnRedo" title="Redo (Ctrl+Shift+Z)"><i data-lucide="redo-2"></i></button>
+    <div class="tbdiv"></div>
+    <button class="btn light" id="btnTpl"><i data-lucide="layout-template"></i><span class="bl">Templates</span></button>
+    <button class="btn acc" id="btnExport"><i data-lucide="download"></i><span class="bl">Export</span></button>
+    <button class="btn acc" id="btnScrlExport" style="display:none"><i data-lucide="panels-top-left"></i><span class="bl">SCRL Export</span></button>
+  </div>
+</header>
+
+<div id="app">
+  <aside id="lib">
+    <div id="libHead"><b>Elements</b><button id="libClose"><i data-lucide="x"></i></button></div>
+
+    <div class="libsec">Photos</div>
+    <button class="libdrop" id="libPhoto"><i data-lucide="upload" style="width:16px;height:16px"></i><div style="margin-top:6px">Upload photo</div></button>
+    <button class="lb wide" id="libSplit" style="margin-top:8px"><i data-lucide="grid-2x2"></i>Split PNG / sprite sheet</button>
+    <p class="libhint">Or drag &amp; drop onto the canvas. PNG with transparency works great as custom stickers / torn frames.</p>
+    <div id="splitTrayWrap" style="display:none">
+      <div class="libsec" style="align-items:center"><span>Split tray</span><span id="splitTrayCount" style="margin-left:auto;font:600 9px var(--mono);color:var(--acc)"></span><button class="btn sm" id="splitTrayClear" style="margin-left:8px;padding:4px 8px;font:600 10px var(--mono)">Clear all</button></div>
+      <div class="libgrid" id="splitTrayGrid" style="grid-template-columns:1fr 1fr;gap:7px"></div>
+      <p class="libhint">Drag to canvas or click to place at center. × discards.</p>
+    </div>
+
+    <div class="libsec">Cut &amp; paste</div>
+    <button class="lb wide" id="libCut"><i data-lucide="scissors"></i>Cut-out tool</button>
+    <button class="lb wide" id="libPaste"><i data-lucide="clipboard-paste"></i>Paste a copy</button>
+    <p class="libhint">Draw a selection — lasso, rectangle, circle, star, heart or torn — then <b>cut</b>: the piece lifts off the canvas and follows your cursor. <b>Click to drop it exactly there</b> — done. Shift-click stamps extra copies; Esc puts it back where it was.</p>
+
+    <div class="libsec">Frames <small>mask a photo</small></div>
+    <div class="libgrid" id="libFrames">
+      <button class="lb" data-m="none">Plain</button>
+      <button class="lb" data-m="rounded">Rounded</button>
+      <button class="lb" data-m="polaroid">Polaroid</button>
+      <button class="lb" data-m="stamp">Stamp</button>
+      <button class="lb" data-m="torn">Torn</button>
+      <button class="lb" data-m="film">Film</button>
+      <button class="lb" data-m="circle">Circle</button>
+      <button class="lb" data-m="organic">Organic</button>
+    </div>
+    <p class="libhint">Select a photo first to re-frame it, or click to upload into that frame.</p>
+
+    <div class="libsec">Filmstrip</div>
+    <button class="lb wide" id="libFilm"><i data-lucide="film"></i>Add filmstrip</button>
+
+    <div class="libsec">Paper</div>
+    <div class="libgrid" id="libPaper">
+      <button class="lb" data-k="torn"><i data-lucide="scissors"></i>Torn</button>
+      <button class="lb" data-k="tape"><i data-lucide="paperclip"></i>Tape</button>
+      <button class="lb" data-k="scrap"><i data-lucide="sticky-note"></i>Scrap</button>
+      <button class="lb" data-k="receipt"><i data-lucide="receipt"></i>Receipt</button>
+      <button class="lb wide" data-k="postcard"><i data-lucide="mail"></i>Postcard</button>
+    </div>
+
+    <div class="libsec">Stickers</div>
+    <div class="libgrid" id="libStickers"></div>
+
+    <div class="libsec">Text</div>
+    <div class="libgrid">
+      <button class="lb" id="libTextHand"><i data-lucide="type"></i>Handwritten</button>
+      <button class="lb" id="libTextType"><i data-lucide="type"></i>Typewriter</button>
+    </div>
+
+    <div class="libsec">Analog FX</div>
+    <div class="libgrid" id="libFx">
+      <button class="lb" data-k="grain"><i data-lucide="sparkles"></i>Grain</button>
+      <button class="lb" data-k="dust"><i data-lucide="wind"></i>Dust</button>
+      <button class="lb" data-k="scratch"><i data-lucide="slash"></i>Scratches</button>
+      <button class="lb" data-k="leak"><i data-lucide="sun"></i>Light leak</button>
+      <button class="lb wide" data-k="vignette"><i data-lucide="circle"></i>Vignette</button>
+    </div>
+  </aside>
+
+  <section id="center">
+    <div id="stage">
+      <div id="holder">
+        <canvas id="cv"></canvas>
+        <canvas id="ov"></canvas>
+        <textarea id="ed" spellcheck="false"></textarea>
+      </div>
+    </div>
+    <div id="cutbar">
+      <span id="cutHint">Drag on the canvas to select</span>
+      <div id="cutShapes">
+        <button class="sbtn" data-v="lasso" title="Freehand lasso"><i data-lucide="lasso"></i></button>
+        <button class="sbtn" data-v="rect" title="Rectangle"><i data-lucide="square"></i></button>
+        <button class="sbtn" data-v="circle" title="Ellipse"><i data-lucide="circle"></i></button>
+        <button class="sbtn" data-v="star" title="Star shape"><i data-lucide="star"></i></button>
+        <button class="sbtn" data-v="heart" title="Heart shape"><i data-lucide="heart"></i></button>
+        <button class="sbtn" data-v="torn" title="Torn paper shape"><i data-lucide="activity"></i></button>
+      </div>
+      <div id="cutActs">
+        <button class="btn sm acc" id="cutDo"><i data-lucide="scissors"></i>Cut</button>
+        <button class="btn sm" id="copyDo"><i data-lucide="copy"></i>Copy</button>
+        <button class="btn sm" id="cutCancel">Esc</button>
+      </div>
+      <button id="cutExit" title="Exit cut-out tool"><i data-lucide="x"></i></button>
+    </div>
+    <div id="placebar">
+      <span id="placeLbl">Click to place</span>
+      <button class="btn sm" id="placeDone"><i data-lucide="x"></i>Cancel</button>
+    </div>
+    <div id="zoombar">
+      <button class="zbtn" id="zOut" title="Zoom out"><i data-lucide="zoom-out"></i></button>
+      <span id="zoomVal">100%</span>
+      <button class="zbtn" id="zIn" title="Zoom in"><i data-lucide="zoom-in"></i></button>
+      <button class="zbtn" id="zFit" title="Fit"><i data-lucide="maximize"></i></button>
+    </div>
+  </section>
+
+  <aside id="panel">
+    <div id="sheetHead"><b>Properties</b><button id="sheetClose"><i data-lucide="x"></i></button></div>
+    <div id="panelScroll">
+      <div id="props"></div>
+      <div class="sec-head" style="margin-top:24px"><span>Layers</span><span class="sh-r" id="layerCount"></span></div>
+      <div id="layerList"></div>
+    </div>
+  </aside>
+</div>
+
+<nav id="mobar">
+  <button class="mbtn" data-act="photo"><i data-lucide="image"></i>PHOTO</button>
+  <button class="mbtn" data-act="cut"><i data-lucide="scissors"></i>CUT</button>
+  <button class="mbtn" data-act="text"><i data-lucide="type"></i>TEXT</button>
+  <button class="mbtn" data-act="stickers"><i data-lucide="star"></i>STICKERS</button>
+  <button class="mbtn" data-act="paper"><i data-lucide="sticky-note"></i>PAPER</button>
+  <button class="mbtn" data-act="fx"><i data-lucide="sparkles"></i>FX</button>
+</nav>
+
+<!-- Templates -->
+<div class="mback" id="mTpl"><div class="modal wide">
+  <div class="mhead"><h3>Templates</h3><span class="msub">STARTING POINTS — FULLY EDITABLE</span><button class="ibtn dark mclose" data-m="mTpl"><i data-lucide="x"></i></button></div>
+  <div class="mbody"><div class="tgrid" id="tplGrid"></div></div>
+</div></div>
+
+<!-- Export -->
+<div class="mback" id="mExport"><div class="modal slim">
+  <div class="mhead"><h3>Export</h3><span class="msub">THE COLLAGE, EXACTLY AS SEEN</span><button class="ibtn dark mclose" data-m="mExport"><i data-lucide="x"></i></button></div>
+  <div class="mbody">
+    <div class="exprev" id="exPrev"></div>
+    <label class="f"><span>Format</span>
+      <select id="exFmt">
+        <option value="png">PNG — lossless</option>
+        <option value="jpg">JPG — smaller file</option>
+        <option value="webp">WebP — modern</option>
+      </select></label>
+    <label class="f"><span>Resolution</span>
+      <select id="exScale">
+        <option value="1">1× — <span id="exS1"></span></option>
+        <option value="2">2× — <span id="exS2"></span></option>
+      </select></label>
+    <label class="f" id="exQRow"><span>Quality <b id="exQV">90</b></span><input type="range" id="exQ" min="40" max="100" value="90"></label>
+    <label class="checkrow"><input type="checkbox" id="exTrans"><span>Transparent background (PNG only)</span></label>
+    <p class="hint">Editor guides, cut-out selections and selection marks are never exported.</p>
+    <div id="scrlExportEntry" style="display:none;margin-top:12px;padding:12px;background:#E9E4D6;border:1px solid var(--line);border-radius:10px">
+      <div class="hint" style="margin-bottom:8px">SCRL carousel — <span id="scrlEntryN"></span> slices ready — preview strip in SCRL export</div>
+      <button class="btn acc block" id="btnOpenScrlExport"><i data-lucide="panels-top-left"></i>Open SCRL export</button>
+    </div>
+  </div>
+  <div class="mfoot">
+    <button class="btn mclose" data-m="mExport">Cancel</button>
+    <button class="btn acc" id="exGo"><i data-lucide="download"></i>Export image</button>
+  </div>
+</div></div>
+
+<!-- SCRL Export -->
+<div class="mback" id="mScrlExport"><div class="modal wide">
+  <div class="mhead"><h3>SCRL Export</h3><span class="msub">SEAMLESS CAROUSEL — N SLICES</span><button class="ibtn dark mclose" data-m="mScrlExport"><i data-lucide="x"></i></button></div>
+  <div class="mbody">
+    <div id="scrlStrip" style="display:flex;gap:8px;overflow-x:auto;padding:12px;background:#E9E4D6;border-radius:10px;outline:1px solid var(--line);margin-bottom:14px;min-height:164px;align-items:flex-start"></div>
+    <div id="scrlCount" class="hint" style="margin-bottom:10px"></div>
+    <label class="f"><span>Format</span>
+      <select id="scrlFmt">
+        <option value="png">PNG — lossless</option>
+        <option value="jpg">JPG — smaller file</option>
+        <option value="webp">WebP — modern</option>
+      </select></label>
+    <label class="f"><span>Resolution</span>
+      <select id="scrlScale">
+        <option value="1">1× — <span id="scrlS1"></span></option>
+        <option value="2">2× — <span id="scrlS2"></span></option>
+      </select></label>
+    <div id="scrlMP" class="hint" style="margin:6px 0 2px;font:600 11px var(--mono)"></div>
+    <div id="scrlWarn" class="hint" style="margin-bottom:10px;color:#E5484D;display:none"></div>
+    <label class="f" id="scrlQRow"><span>Quality <b id="scrlQV">90</b></span><input type="range" id="scrlQ" min="40" max="100" value="90"></label>
+    <label class="checkrow"><input type="checkbox" id="scrlTrans"><span>Transparent background (PNG only)</span></label>
+    <p class="hint">Guides are never exported. Each slice is exactly 1080×1350 (× scale).</p>
+  </div>
+  <div class="mfoot">
+    <button class="btn mclose" data-m="mScrlExport">Cancel</button>
+    <button class="btn acc" id="scrlGo"><i data-lucide="download"></i>Download N slices</button>
+  </div>
+</div></div>
+
+<!-- Confirm -->
+<div class="mback" id="mConfirm"><div class="modal slim">
+  <div class="mhead"><h3 id="cTitle"></h3></div>
+  <div class="mbody"><p class="hint" id="cBody" style="font-size:13.5px"></p></div>
+  <div class="mfoot"><button class="btn" id="cCancel">Cancel</button><button class="btn" id="cAlt" style="display:none"></button><button class="btn danger" id="cOk">Continue</button></div>
+</div></div>
+
+<!-- Split PNG -->
+<div class="mback" id="mSplit"><div class="modal slim">
+  <div class="mhead"><h3>Split PNG</h3><span class="msub">AUTO OR GRID → PIECES</span><button class="ibtn dark mclose" data-m="mSplit"><i data-lucide="x"></i></button></div>
+  <div class="mbody">
+    <div id="splitOptionsView">
+      <div class="f"><span>Mode</span>
+        <div class="miniseg" id="splitModeSeg">
+          <button data-v="auto" class="on">Auto</button>
+          <button data-v="grid">Grid</button>
+        </div>
+        <p class="hint">Auto: background-gap detect. Grid: uniform cols×rows.</p>
+      </div>
+      <div class="grid2" id="splitGridOpts" style="display:none">
+        <label class="f"><span>Cols <b id="splitColsV">4</b></span><input type="range" id="splitCols" min="1" max="16" value="4"></label>
+        <label class="f"><span>Rows <b id="splitRowsV">4</b></span><input type="range" id="splitRows" min="1" max="16" value="4"></label>
+      </div>
+      <p class="hint" id="splitHint">Pick a PNG; each asset becomes its own movable photo.</p>
+    </div>
+    <div id="splitResultsView" style="display:none">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;gap:8px">
+        <span class="hint" id="splitResultsHint" style="flex:1"></span>
+        <div style="display:flex;gap:6px;flex:none">
+          <button class="btn sm" id="splitSelectAll">All</button>
+          <button class="btn sm" id="splitSelectNone">None</button>
+        </div>
+      </div>
+      <div class="tgrid" id="splitResultsGrid" style="grid-template-columns:repeat(auto-fill,minmax(124px,1fr));gap:10px;max-height:52vh;overflow:auto;padding:2px"></div>
+    </div>
+  </div>
+  <div class="mfoot" id="splitFootOptions">
+    <button class="btn mclose" data-m="mSplit">Cancel</button>
+    <button class="btn acc" id="splitPickBtn"><i data-lucide="upload"></i>Pick PNG</button>
+  </div>
+  <div class="mfoot" id="splitFootResults" style="display:none;justify-content:space-between">
+    <button class="btn" id="splitBackBtn"><i data-lucide="arrow-left"></i>Back</button>
+    <button class="btn acc" id="splitPlaceBtn">Place selected (0)</button>
+  </div>
+</div></div>
+
+<div id="toasts"></div>
+<input type="file" id="fileInput" multiple hidden accept="image/*">
+
+<script type="module" src="./js/main.js"></script>
+</body>
+</html>
